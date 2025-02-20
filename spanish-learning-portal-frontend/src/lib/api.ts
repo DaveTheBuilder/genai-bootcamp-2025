@@ -35,13 +35,18 @@ export const api = {
     get: (id: string) => fetchJson(`/study-activities/${id}`),
   },
   sessions: {
-    list: (page = 1) => fetchJson(`/sessions?page=${page}`),
-    get: (id: string) => fetchJson(`/sessions/${id}`),
+    list: (page = 1) => fetchJson(`/study_sessions?page=${page}`),
+    get: (id: string) => fetchJson(`/study_sessions/${id}`),
     review: (sessionId: string, data: any) => 
-      fetchJson(`/sessions/${sessionId}/review`, {
+      fetchJson(`/study_sessions/${sessionId}/review`, {
         method: 'POST',
         body: JSON.stringify(data),
       }),
+  },
+  dashboard: {
+    lastStudySession: () => fetchJson('/dashboard/last_study_session'),
+    studyProgress: () => fetchJson('/dashboard/study_progress'),
+    quickStats: () => fetchJson('/dashboard/quick-stats'),
   },
   // ... other API endpoints
 }; 

@@ -52,6 +52,21 @@ const StudyActivities: React.FC = () => {
             </Link>
           </Card>
         ))}
+        <Card title="Timed Activity">
+          <Link to="/study-activities/timed" className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400">
+            Start Timed Activity
+          </Link>
+        </Card>
+        <Card title="Missing Letters">
+          <Link to="/study-activities/missing-letters" className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400">
+            Start Missing Letters Game
+          </Link>
+        </Card>
+        <Card title="Hangman">
+          <Link to="/study-activities/hangman" className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400">
+            Start Hangman Game
+          </Link>
+        </Card>
       </div>
     </div>
   );

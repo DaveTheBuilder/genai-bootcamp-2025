@@ -36,4 +36,12 @@ class Session(models.Model):
         ordering = ['-start_time']
 
     def __str__(self):
-        return f"{self.group.name} - {self.start_time}" 
+        return f"{self.group.name} - {self.start_time}"
+
+class StudyActivity(models.Model):
+    name = models.CharField(max_length=255)
+    description = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.name 

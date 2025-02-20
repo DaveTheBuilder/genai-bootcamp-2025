@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Word, Group, Session
+from .models import Word, Group, Session, StudyActivity
 
 class WordSerializer(serializers.ModelSerializer):
     class Meta:
@@ -21,4 +21,24 @@ class SessionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Session
-        fields = ['id', 'group_name', 'activity_id', 'start_time', 'review_items_count'] 
+        fields = ['id', 'group_name', 'activity_id', 'start_time', 'review_items_count']
+
+class StudyActivitySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = StudyActivity
+        fields = ['id', 'name', 'description', 'created_at']
+
+class DashboardLastStudySessionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Session
+        fields = ['id', 'group', 'created_at', 'activity_id']
+
+class DashboardStudyProgressSerializer(serializers.Serializer):
+    total_words_studied = serializers.IntegerField()
+    total_available_words = serializers.IntegerField()
+
+class DashboardQuickStatsSerializer(serializers.Serializer):
+    success_rate = serializers.FloatField()
+    total_study_sessions = serializers.IntegerField()
+    total_active_groups = serializers.IntegerField()
+    study_streak_days = serializers.IntegerField() 

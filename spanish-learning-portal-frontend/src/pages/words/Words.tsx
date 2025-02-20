@@ -18,6 +18,7 @@ const Words: React.FC = () => {
       try {
         setLoading(true);
         const data = await api.words.list(currentPage, sortKey, sortDirection);
+        console.log('Fetched Words:', data);
         setWords(data.results);
         setTotalPages(Math.ceil(data.count / 50));
       } catch (err) {

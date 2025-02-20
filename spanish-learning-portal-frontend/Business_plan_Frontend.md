@@ -172,3 +172,19 @@ Reset History Button: This has a button that allows us to reset the entire datab
 We need to confirm this action in a dialog and type the word reset me to confirm.
 
 Dark Mode Toggle: This is a toggle that changes from light to dark theme.
+
+
+
+
+# Clear npm cache
+npm cache clean --force
+
+# Delete node_modules
+rm -rf node_modules
+
+# Reinstall dependencies
+npm install
+
+  npm install @radix-ui/react-toast
+  npm install class-variance-authority
+  npm install framer-motion

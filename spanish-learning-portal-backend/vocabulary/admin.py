@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Word, Group, Session
+from .models import Word, Group, Session, StudyActivity
 
 @admin.register(Word)
 class WordAdmin(admin.ModelAdmin):
@@ -25,4 +25,8 @@ class GroupAdmin(admin.ModelAdmin):
 @admin.register(Session)
 class SessionAdmin(admin.ModelAdmin):
     list_display = ('group', 'start_time', 'end_time', 'review_items_count')
-    list_filter = ('group', 'start_time') 
+    list_filter = ('group', 'start_time')
+
+@admin.register(StudyActivity)
+class StudyActivityAdmin(admin.ModelAdmin):
+    list_display = ('name', 'created_at') 
