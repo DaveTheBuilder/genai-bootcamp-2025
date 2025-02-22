@@ -67,6 +67,11 @@ const StudyActivities: React.FC = () => {
             Start Hangman Game
           </Link>
         </Card>
+        <Card title="Translation Game">
+          <Link to="/study-activities/translation-game" className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400">
+            Start Translation Game
+          </Link>
+        </Card>
       </div>
     </div>
   );

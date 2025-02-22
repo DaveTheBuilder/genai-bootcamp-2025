@@ -4,3 +4,5 @@ django-cors-headers==4.3.1
 djangorestframework==3.14.0
 pytz==2024.1
 sqlparse==0.4.4 
+boto3==1.35.100
+python-dotenv==1.0.1

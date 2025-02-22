@@ -25,6 +25,7 @@ export const api = {
       return fetchJson(`/words?${params}`);
     },
     get: (id: string) => fetchJson(`/words/${id}`),
+    getTranslationGame: () => fetchJson(`/translation-game/`),
   },
   groups: {
     list: (page = 1) => fetchJson(`/groups?page=${page}`),

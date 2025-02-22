@@ -188,3 +188,5 @@ npm install
   npm install @radix-ui/react-toast
   npm install class-variance-authority
   npm install framer-motion
+  npm install react-loader-spinner
+

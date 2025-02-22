@@ -10,7 +10,9 @@ coverage
 dist
 build
 
+.env
 # Misc
+*.mp3
 .DS_Store
 .env.local
 .env.development.local

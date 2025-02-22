@@ -400,3 +400,5 @@ Returns quick overview statistics.
 - Foreign key constraints maintain referential integrity
 - JSON storage for word parts allows flexible component storage
 - Counter cache on groups.words_count optimizes word counting queries
+
+

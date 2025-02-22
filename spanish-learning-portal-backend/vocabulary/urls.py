@@ -14,5 +14,8 @@ dashboard_router.register(r'dashboard', views.DashboardViewSet, basename='dashbo
 
 urlpatterns = [
     path('', include(router.urls)),
-    path('', include(dashboard_router.urls)),  # Include dashboard URLs
+    path('dashboard/', include(dashboard_router.urls)),  # Include dashboard URLs
+    path('synthesize-speech/', views.synthesize_speech, name='synthesize-speech'),
+    path('translation-game/', views.get_translation_game, name='translation-game'),
+    path('test-aws-auth/', views.test_aws_auth, name='test-aws-auth'),
 ] 

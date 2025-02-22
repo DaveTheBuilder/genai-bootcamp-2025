@@ -9,6 +9,15 @@ from .serializers import (
     DashboardStudyProgressSerializer, DashboardQuickStatsSerializer
 )
 from django.utils import timezone
+from rest_framework.decorators import api_view, permission_classes
+import random
+import boto3
+
+from dotenv import load_dotenv
+
+load_dotenv('.env.local')
+
+
 
 class WordViewSet(viewsets.ModelViewSet):
     queryset = Word.objects.all()
@@ -85,4 +94,96 @@ class DashboardViewSet(viewsets.ViewSet):
         }
         serializer = DashboardQuickStatsSerializer(data=data)
         serializer.is_valid(raise_exception=True)
-        return Response(serializer.data) 
+        return Response(serializer.data)
+
+@api_view(['GET'])
+def get_translation_game(request):
+    try:
+        # Fetch all words from the database
+        words = Word.objects.all()
+        
+        # Check if there are any words available
+        if not words.exists():
+            return Response({"detail": "No words available."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Randomly select a word
+        selected_word = random.choice(words)
+
+        # Prepare the correct translation
+        correct_translation = selected_word.english
+
+        # Generate a list of options
+        # Get a few random words to use as distractors
+        distractors = Word.objects.exclude(id=selected_word.id).order_by('?')[:3]
+        options = [correct_translation] + [distractor.english for distractor in distractors]
+
+        # Shuffle the options
+        random.shuffle(options)
+
+        # Prepare the response data
+        response_data = {
+            "spanish": selected_word.spanish,
+            "correct_translation": correct_translation,
+            "options": options,
+        }
+
+        return Response(response_data, status=status.HTTP_200_OK)
+
+    except Exception as e:
+        return Response({"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+from rest_framework.permissions import AllowAny
+from django.http import FileResponse
+from io import BytesIO
+
+@api_view(['POST'])
+@permission_classes([AllowAny])  # 👈 Allow unauthenticated access
+
+def synthesize_speech(request):
+    text = request.data.get('text')
+    if not text:
+        return Response({"error": "Text is required"}, status=400)
+
+    try:
+        polly = boto3.client('polly', region_name="eu-west-1")
+        response = polly.synthesize_speech(
+            Text=text,
+            OutputFormat='mp3',
+            VoiceId='Lucia',
+            Engine='neural',
+            LanguageCode='es-ES'
+        )
+
+        audio_stream = response.get("AudioStream")
+        if not audio_stream:
+            return Response({"error": "Failed to synthesize speech"}, status=500)
+
+        # Read binary MP3 data into memory
+        audio_bytes = BytesIO(audio_stream.read())
+
+        # Return as a proper file response
+        return FileResponse(audio_bytes, content_type="audio/mpeg")
+
+    except Exception as e:
+        import traceback
+        print("Error in synthesize_speech:", traceback.format_exc())  # Log error details
+        return Response({"error": str(e)}, status=500)
+
+
+#import os
+#from dotenv import load_dotenv
+
+   # Load environment variables from .env.local
+#load_dotenv('.env.local')
+
+@api_view(['GET'])
+def test_aws_auth(request):
+    try:
+        sts_client = boto3.client('sts')
+        # Get caller identity to verify authentication
+        identity = sts_client.get_caller_identity()
+        print(identity)
+        return Response({"message": "AWS authentication successful!", "identity": identity}, status=200)
+    except Exception as e:
+        return Response({"error": str(e)}, status=500)
