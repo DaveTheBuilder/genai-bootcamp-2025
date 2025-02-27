@@ -402,3 +402,27 @@ Returns quick overview statistics.
 - Counter cache on groups.words_count optimizes word counting queries
 
 
+
+
+# Clear npm cache
+npm cache clean --force
+
+# Delete node_modules
+rm -rf node_modules
+
+# Reinstall dependencies
+npm install
+
+  npm install @radix-ui/react-toast
+  npm install class-variance-authority
+  npm install framer-motion
+  npm install react-loader-spinner
+npm install next-themes
+npm install sonner
+   npm install chromadb
+
+
+pip install chromadb
+
+pip install openai
+

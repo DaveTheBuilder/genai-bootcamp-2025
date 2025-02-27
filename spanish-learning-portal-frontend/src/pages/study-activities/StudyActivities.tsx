@@ -1,80 +1,84 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
-import { api } from '../../lib/api';
-import { StudyActivity } from '../../lib/types';
-import Card from '../../components/shared/Card';
 
-const StudyActivities: React.FC = () => {
-  const [activities, setActivities] = React.useState<StudyActivity[]>([]);
-  const [loading, setLoading] = React.useState(true);
-  const [error, setError] = React.useState<string | null>(null);
+import { motion } from "framer-motion";
+import { ActivityCard } from "@/components/Study/ActivityCard";
 
-  React.useEffect(() => {
-    const fetchActivities = async () => {
-      try {
-        setLoading(true);
-        const data = await api.studyActivities.list();
-        setActivities(data.results);
-      } catch (err) {
-        console.error('Error fetching activities:', err);
-        setError('Failed to load study activities');
-      } finally {
-        setLoading(false);
-      }
-    };
+const activities = [
+  {
+    title: "Timed Activity",
+    description: "Race against the clock to complete challenges and improve your speed",
+    icon: "src/icons/timer.svg",
+    to: "/study-activities/timed",
+  },
+  {
+    title: "Missing Letters",
+    description: "Fill in the gaps to complete words and enhance your vocabulary",
+    icon: "src/icons/letters.svg",
+    to: "/study-activities/missing-letters",
+  },
+  {
+    title: "Hangman",
+    description: "Classic word-guessing game to test your knowledge",
+    icon: "src/icons/hangman.svg",
+    to: "/study-activities/hangman",
+  },
+  {
+    title: "Translation Game",
+    description: "Practice translating phrases between languages",
+    icon: "src/icons/translate.svg",
+    to: "/study-activities/translation-game",
+  },
+  {
+    title: "Conversation Practice",
+    description: "Improve your speaking skills through interactive dialogues",
+    icon: "src/icons/conversation.svg",
+    to: "/study-activities/conversation-practice",
+  },
+];
 
-    fetchActivities();
-  }, []);
-
-  if (loading) {
-    return <div>Loading...</div>;
-  }
-
-  if (error) {
-    return <div className="text-red-500">{error}</div>;
-  }
-
+const Index = () => {
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Study Activities</h1>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {activities.map((activity) => (
-          <Card key={activity.id} title={activity.name}>
-            <p className="text-gray-600 dark:text-gray-300 mb-4">
-              {activity.description}
-            </p>
-            <Link
-              to={`/study-activities/${activity.id}`}
-              className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400"
-            >
-              View Details
-            </Link>
-          </Card>
-        ))}
-        <Card title="Timed Activity">
-          <Link to="/study-activities/timed" className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400">
-            Start Timed Activity
-          </Link>
-        </Card>
-        <Card title="Missing Letters">
-          <Link to="/study-activities/missing-letters" className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400">
-            Start Missing Letters Game
-          </Link>
-        </Card>
-        <Card title="Hangman">
-          <Link to="/study-activities/hangman" className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400">
-            Start Hangman Game
-          </Link>
-        </Card>
-        <Card title="Translation Game">
-          <Link to="/study-activities/translation-game" className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400">
-            Start Translation Game
-          </Link>
-        </Card>
-      </div>
+    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white px-4 py-16 dark:from-gray-900 dark:to-gray-800 sm:px-6 lg:px-8">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="mx-auto max-w-7xl"
+      >
+        <div className="text-center">
+          <motion.h1
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="font-display text-4xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-5xl md:text-6xl"
+          >
+            Study <span className="text-blue-600 dark:text-blue-400">Activities</span>
+          </motion.h1>
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="mx-auto mt-4 max-w-2xl text-lg text-gray-600 dark:text-gray-300"
+          >
+            Choose an activity to start learning and practicing
+          </motion.p>
+        </div>
+
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.4 }}
+          className="mt-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
+        >
+          {activities.map((activity, index) => (
+            <ActivityCard
+              key={activity.title}
+              {...activity}
+              className={`transform transition-all duration-300 hover:scale-[1.02]`}
+            />
+          ))}
+        </motion.div>
+      </motion.div>
     </div>
   );
 };
 
-export default StudyActivities; 
+export default Index;

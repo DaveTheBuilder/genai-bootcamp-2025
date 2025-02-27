@@ -12,12 +12,29 @@ from django.utils import timezone
 from rest_framework.decorators import api_view, permission_classes
 import random
 import boto3
+import os
+import json
+import logging
+from typing import Dict, List, Optional
+import uuid
 
 from dotenv import load_dotenv
+from .vector import QuestionVectorStore
+from .models import GeneratedQuestion
 
 load_dotenv('.env.local')
 
+from rest_framework.response import Response
+from rest_framework.decorators import api_view
+from .services.retrieval import retrieve_similar_conversations
+from rest_framework.permissions import AllowAny
 
+from django.core.files.base import ContentFile
+from django.conf import settings
+
+import logging
+
+logger = logging.getLogger(__name__)
 
 class WordViewSet(viewsets.ModelViewSet):
     queryset = Word.objects.all()
@@ -27,10 +44,10 @@ class WordViewSet(viewsets.ModelViewSet):
         queryset = Word.objects.all()
         sort_by = self.request.query_params.get('sort_by', 'spanish')
         order = self.request.query_params.get('order', 'asc')
-        
+
         if order == 'desc':
             sort_by = f'-{sort_by}'
-            
+
         return queryset.order_by(sort_by)
 
 class GroupViewSet(viewsets.ModelViewSet):
@@ -101,7 +118,7 @@ def get_translation_game(request):
     try:
         # Fetch all words from the database
         words = Word.objects.all()
-        
+
         # Check if there are any words available
         if not words.exists():
             return Response({"detail": "No words available."}, status=status.HTTP_404_NOT_FOUND)
@@ -171,11 +188,6 @@ def synthesize_speech(request):
         return Response({"error": str(e)}, status=500)
 
 
-#import os
-#from dotenv import load_dotenv
-
-   # Load environment variables from .env.local
-#load_dotenv('.env.local')
 
 @api_view(['GET'])
 def test_aws_auth(request):
@@ -187,3 +199,50 @@ def test_aws_auth(request):
         return Response({"message": "AWS authentication successful!", "identity": identity}, status=200)
     except Exception as e:
         return Response({"error": str(e)}, status=500)
+
+@api_view(['GET'])
+def get_words(request):
+    words = Word.objects.all()
+    serializer = WordSerializer(words, many=True)
+    return Response(serializer.data)
+
+
+from rest_framework.decorators import api_view
+from .question_gen import QuestionGenerator
+from django.http import JsonResponse
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def generate_question(request):
+    data = json.loads(request.body)
+    practice_type = data.get("practiceType")
+    topic = data.get("topic")
+    level = data.get("level")
+    prompt = data.get("prompt")
+    print(f"Received practice_type: {practice_type}, topic: {topic}, level: {level}")
+
+    # Create an instance of QuestionGenerator
+    question_generator = QuestionGenerator()
+    bedrock_response = question_generator._invoke_bedrock(practice_type, topic, level, prompt)
+
+    if bedrock_response:
+        return JsonResponse(bedrock_response)
+    else:
+        return JsonResponse({"error": "Failed to generate question"}, status=500)
+    
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def generate_similar_question(request):
+    data = json.loads(request.body)
+    practice_type = data.get("practiceType")
+    topic = data.get("topic")
+    level = data.get("level")
+    prompt = data.get("prompt")
+    question_generator = QuestionGenerator()
+    similar_question = question_generator.generate_similar_question(practice_type, topic, level, prompt)
+
+    if similar_question:
+        return JsonResponse(similar_question)
+    else:
+        return JsonResponse({"error": "Failed to generate similar question"}, status=400)

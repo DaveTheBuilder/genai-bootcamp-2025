@@ -27,10 +27,6 @@ export const api = {
     get: (id: string) => fetchJson(`/words/${id}`),
     getTranslationGame: () => fetchJson(`/translation-game/`),
   },
-  groups: {
-    list: (page = 1) => fetchJson(`/groups?page=${page}`),
-    get: (id: string) => fetchJson(`/groups/${id}`),
-  },
   studyActivities: {
     list: (page = 1) => fetchJson(`/study-activities?page=${page}`),
     get: (id: string) => fetchJson(`/study-activities/${id}`),
@@ -44,10 +40,31 @@ export const api = {
         body: JSON.stringify(data),
       }),
   },
+  conversations: {
+    generate: (inputText: string) => fetchJson(`/generate_conversation/`, {
+      method: 'POST',
+      body: JSON.stringify({ input_text: inputText }),
+    }),
+    retrieveSimilar: (embedding: string) => fetchJson(`/retrieve_conversations/`, {
+      method: 'POST',
+      body: JSON.stringify({ embedding }),
+    }),
+  },
   dashboard: {
     lastStudySession: () => fetchJson('/dashboard/last_study_session'),
     studyProgress: () => fetchJson('/dashboard/study_progress'),
     quickStats: () => fetchJson('/dashboard/quick-stats'),
   },
-  // ... other API endpoints
-}; 
+  questions: {
+    // Endpoint to save the generated question
+    save: (questionData: any) => fetchJson('/save_question/', {
+      method: 'POST',
+      body: JSON.stringify(questionData),
+    }),
+    // Endpoint to retrieve saved questions
+    listSaved: () => fetchJson('/saved_questions/'),
+    // Endpoint to generate and save audio for a question
+    generateAudio: (questionId: string) => fetchJson(`/generate_audio/${questionId}`),
+  },
+};
+

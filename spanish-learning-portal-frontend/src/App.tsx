@@ -11,6 +11,7 @@ import Groups from './pages/groups/Groups';
 import Sessions from './pages/sessions/Sessions';
 import Settings from './pages/settings/Settings';
 import TranslationGame from './pages/study-activities/TranslationGame';
+import ConversationPractice from './pages/study-activities/ConversationPractice';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
 const App: React.FC = () => {
@@ -27,6 +28,7 @@ const App: React.FC = () => {
             <Route path="/study-activities/missing-letters" element={<MissingLetters />} />
             <Route path="/study-activities/hangman" element={<Hangman />} />
             <Route path="/study-activities/translation-game" element={<TranslationGame />} />
+            <Route path="/study-activities/conversation-practice" element={<ConversationPractice />} />
             <Route path="/words" element={<Words />} />
             <Route path="/groups" element={<Groups />} />
             <Route path="/sessions" element={<Sessions />} />

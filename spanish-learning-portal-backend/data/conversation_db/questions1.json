@@ -1,0 +1,69 @@
+{
+    "20250215_204111": {
+      "question": {
+        "Introduction": "Un hombre y una mujer están hablando en un centro comercial",
+        "Conversation": "Hombre: ¿Cuánto cuesta este bolso? Vendedor: Este bolso cuesta 5,000 yenes. Si desea ver algo más, hágamelo saber. Mujer: ¡Disculpe! ¿Tienen zapatos rojos en stock? Vendedor: Sí, tenemos zapatos rojos en talla 7 y talla 8. Hombre: Entonces, compraré este bolso.",
+        "Question": "¿Qué producto compra el hombre? A) Bolso B) Zapatos C) Zapatos y bolso D) No compra nada",
+        "Options": [
+          "Comer pizza",
+          "Comer hamburguesa",
+          "Comer ensalada",
+          "Comer pasta"
+        ]
+      },
+      "practice_type": "Práctica de diálogo",
+      "topic": "Compras",
+      "created_at": "2025-02-15 20:41:11"
+    },
+    "20250215_204153": {
+      "question": {
+        "Introduction": "Un hombre y una mujer están hablando sobre sus planes de viaje",
+        "Conversation": "Hombre: ¿A dónde irás de viaje la próxima semana? Mujer: Iré a Kioto. Quiero ver los cerezos en flor. Hombre: ¡Oh! Suena emocionante. ¿Iras en tren bala? Mujer: No, el avión es más rápido. Además, viajaré con mis amigos.",
+        "Question": "¿A dónde viajará la mujer?",
+        "Options": [
+          "a) Tokio",
+          "b) Osaka",
+          "c) Kioto",
+          "d) Hokkaido"
+        ]
+      },
+      "practice_type": "Práctica de diálogo",
+      "topic": "Viajes",
+      "created_at": "2025-02-15 20:41:53"
+    },
+    "20250215_211441": {
+      "question": {
+        "Introduction": "Un hombre y una mujer están hablando en un centro comercial",
+        "Conversation": "Hombre: ¿Cuánto cuesta este bolso? Vendedor: Este bolso cuesta 5,000 yenes. Si desea ver algo más, hágamelo saber. Mujer: ¡Disculpe! ¿Tienen zapatos rojos en stock? Vendedor: Sí, tenemos zapatos rojos en talla 7 y talla 8. Hombre: Entonces, compraré este bolso.",
+        "Question": "¿Qué producto compra el hombre? A) Bolso B) Zapatos C) Zapatos y bolso D) No compra nada",
+        "Options": [
+          "Comer pizza",
+          "Comer hamburguesa",
+          "Comer ensalada",
+          "Comer pasta"
+        ]
+      },
+      "practice_type": "Práctica de diálogo",
+      "topic": "Compras",
+      "created_at": "2025-02-15 21:14:41",
+      "audio_file": "/mnt/c/Users/andre/Sites/omenking/free-genai-bootcamp-2025/listening-comp/frontend/static/audio/question_20250215_211437.mp3"
+    },
+    "20250215_211742": {
+      "question": {
+        "Introduction": "Un hombre y una mujer están hablando en un centro comercial",
+        "Conversation": "Hombre: ¿Cuánto cuesta este bolso? Vendedor: Este bolso cuesta 5,000 yenes. Si desea ver algo más, hágamelo saber. Mujer: ¡Disculpe! ¿Tienen zapatos rojos en stock? Vendedor: Sí, tenemos zapatos rojos en talla 7 y talla 8. Hombre: Entonces, compraré este bolso.",
+        "Question": "¿Qué producto compra el hombre? A) Bolso B) Zapatos C) Zapatos y bolso D) No compra nada",
+        "Options": [
+          "Comer pizza",
+          "Comer hamburguesa",
+          "Comer ensalada",
+          "Comer pasta"
+        ]
+      },
+      "practice_type": "Práctica de diálogo",
+      "topic": "Compras",
+      "created_at": "2025-02-15 21:17:42",
+      "audio_file": "/mnt/c/Users/andre/Sites/omenking/free-genai-bootcamp-2025/listening-comp/frontend/static/audio/question_20250215_211737.mp3"
+    }
+  }
+  

@@ -18,4 +18,14 @@ urlpatterns = [
     path('synthesize-speech/', views.synthesize_speech, name='synthesize-speech'),
     path('translation-game/', views.get_translation_game, name='translation-game'),
     path('test-aws-auth/', views.test_aws_auth, name='test-aws-auth'),
+    path('words/', views.get_words, name='get-words'),
+    path('generate_question/', views.generate_question, name='generate_question'),
+    path('similar/', views.generate_similar_question, name='generate_similar_question'),
 ] 
+
+# Allow serving files in development
+from django.conf import settings
+from django.conf.urls.static import static
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

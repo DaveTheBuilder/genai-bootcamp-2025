@@ -176,17 +176,25 @@ Dark Mode Toggle: This is a toggle that changes from light to dark theme.
 
 
 
-# Clear npm cache
-npm cache clean --force
 
-# Delete node_modules
-rm -rf node_modules
+Create interactive game 
+Agent Based
+On the frontend create a new game in the study activites for interactive learning. It will have a dropdown for Practice type. Example of Dialogue Practice. suggest some more.
+Next will be a dropdown for Practice level. Example of Beginner, Intermediate, Advanced
+Then there will be a select topic dropdown. Example daily converstations - suggest some more.
+There will be a button to generate a new conversation.
+Provide 4 options to choose from as correct responses.
 
-# Reinstall dependencies
-npm install
+Use ChromaDB to store the conversation data.
 
-  npm install @radix-ui/react-toast
-  npm install class-variance-authority
-  npm install framer-motion
-  npm install react-loader-spinner
 
+   npm install @radix-ui/react-radio-group
+
+   npm install @radix-ui/react-select
+
+   npm install @radix-ui/react-label
+
+   npm install @radix-ui/react-card
+
+
+   i want a debug option which will show the json messages being received in a text box. Instead of using a mock service should submit to a backend Django appilcation which will talk to a aws bedrock to generate new dialouge questions with the same structure as the mock. IE Introduction, Conversation, Question and 4 Options. One of the options is the correct one. 

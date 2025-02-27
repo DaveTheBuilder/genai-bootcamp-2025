@@ -4,7 +4,7 @@ from .models import Word, Group, Session, StudyActivity
 class WordSerializer(serializers.ModelSerializer):
     class Meta:
         model = Word
-        fields = ['id', 'spanish', 'english', 'parts']
+        fields = ['id', 'spanish', 'english', 'difficulty', 'xp']
 
 class GroupSerializer(serializers.ModelSerializer):
     words_count = serializers.SerializerMethodField()

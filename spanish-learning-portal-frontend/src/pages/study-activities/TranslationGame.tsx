@@ -13,6 +13,7 @@ const TranslationGame: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [score, setScore] = useState<number>(0);
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
+  const [difficulty, setDifficulty] = useState<string>("");
   const { toast } = useToast();
 
   useEffect(() => {
@@ -23,10 +24,13 @@ const TranslationGame: React.FC = () => {
     setLoading(true);
     try {
       const response = await api.words.getTranslationGame(); // Adjust API call
-      setSpanishWord(response.spanish);
-      setOptions(response.options);
-      setCorrectTranslation(response.correct_translation);
-      setSelectedOption(null);
+      if (response) {
+        setSpanishWord(response.spanish || "");
+        setOptions(response.options || []);
+        setCorrectTranslation(response.correct_translation || "");
+        setDifficulty(response.difficulty || ""); // Default to an empty string if undefined
+        setSelectedOption(null);
+      }
       // ✅ Call Polly to play the audio
       await playAudio(response.spanish);
     } catch (error) {
@@ -145,7 +149,7 @@ const TranslationGame: React.FC = () => {
             exit={{ opacity: 0, y: -10 }}
             className="space-y-2"
           >
-            <h1 className="text-3xl font-bold text-gray-900">{spanishWord}</h1>
+            <h1 className="text-3xl font-bold text-gray-900">{spanishWord} (Difficulty: {difficulty})</h1>
             <button
               onClick={() => playAudio(spanishWord)}
               className="text-sm text-gray-500 hover:text-gray-700 transition-colors"

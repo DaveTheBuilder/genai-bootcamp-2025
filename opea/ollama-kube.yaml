@@ -17,6 +17,10 @@ spec:
           image: ollama/ollama
           ports:
             - containerPort: 11434
+          command:
+            - "/bin/sh"
+            - "-c"
+            - "ollama pull llama3.2:1b && ollama serve"
           env:
             - name: no_proxy
               value: "${no_proxy}"
@@ -28,6 +32,7 @@ spec:
               value: "${LLM_MODEL_ID}"
             - name: host_ip
               value: "${host_ip}"
+
 ---
 apiVersion: v1
 kind: Service
