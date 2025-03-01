@@ -41,13 +41,15 @@ const Words: React.FC = () => {
     }
   };
 
-  const columns = [
+  const columnss = [
     { key: 'spanish', header: 'Spanish' },
     { key: 'english', header: 'English' },
+    { key: 'difficulty', header: 'Difficulty' }, 
+    { key: 'XP', header: 'XP' },       
     { 
-      key: 'parts',
-      header: 'Type',
-      render: (value: any) => value.type
+//      key: 'parts',
+//      header: 'Type',
+//      render: (value: any) => value.type
     }
   ];
 
@@ -65,7 +67,7 @@ const Words: React.FC = () => {
       <div className="bg-white dark:bg-gray-800 shadow rounded-lg">
         <Table
           data={words}
-          columns={columns}
+          columns={columnss}
           sortKey={sortKey}
           sortDirection={sortDirection}
           onSort={handleSort}

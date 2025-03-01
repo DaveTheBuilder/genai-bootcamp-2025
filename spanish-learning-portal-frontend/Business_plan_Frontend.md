@@ -195,6 +195,6 @@ Use ChromaDB to store the conversation data.
    npm install @radix-ui/react-label
 
    npm install @radix-ui/react-card
-
+npm install tesseract.js lucide-react
 
    i want a debug option which will show the json messages being received in a text box. Instead of using a mock service should submit to a backend Django appilcation which will talk to a aws bedrock to generate new dialouge questions with the same structure as the mock. IE Introduction, Conversation, Question and 4 Options. One of the options is the correct one. 

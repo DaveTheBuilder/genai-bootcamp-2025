@@ -2,6 +2,7 @@ import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { BookOpen, Trophy, Clock, Home, Group, Settings } from 'lucide-react';
 
+
 const navItems = [
   { icon: Home, name: 'Dashboard', path: '/dashboard' },
   { icon: BookOpen, name: 'Study Activities', path: '/study-activities' },
@@ -9,6 +10,7 @@ const navItems = [
   { icon: Group, name: 'Word Groups', path: '/groups' },
   { icon: Clock, name: 'Sessions', path: '/sessions' },
   { icon: Settings, name: 'Settings', path: '/settings' },
+
 ];
 
 const NavigationMenu: React.FC = () => {

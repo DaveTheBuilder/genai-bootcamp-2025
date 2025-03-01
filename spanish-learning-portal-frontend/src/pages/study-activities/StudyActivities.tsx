@@ -1,4 +1,3 @@
-
 import { motion } from "framer-motion";
 import { ActivityCard } from "@/components/Study/ActivityCard";
 
@@ -33,6 +32,13 @@ const activities = [
     icon: "src/icons/conversation.svg",
     to: "/study-activities/conversation-practice",
   },
+  {
+    title: "Writing Practice",
+    description: "Improve your Writing skills through OCR",
+    icon: "src/icons/conversation.svg",
+    to: "/study-activities/writing-practice",
+  },
+
 ];
 
 const Index = () => {

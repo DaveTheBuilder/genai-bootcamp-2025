@@ -2,6 +2,8 @@ export interface Word {
   id: number;
   spanish: string;
   english: string;
+  difficulty: string;
+  xp: number;
   parts: {
     type: string;
     category: string;

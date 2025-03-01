@@ -246,3 +246,14 @@ def generate_similar_question(request):
         return JsonResponse(similar_question)
     else:
         return JsonResponse({"error": "Failed to generate similar question"}, status=400)
+    
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def WritingPractice(request):
+
+
+
+    if similar_question:
+        return JsonResponse(similar_question)
+    else:
+        return JsonResponse({"error": "Failed to generate similar question"}, status=450)

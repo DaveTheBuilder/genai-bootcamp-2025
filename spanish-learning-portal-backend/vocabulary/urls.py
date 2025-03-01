@@ -21,6 +21,8 @@ urlpatterns = [
     path('words/', views.get_words, name='get-words'),
     path('generate_question/', views.generate_question, name='generate_question'),
     path('similar/', views.generate_similar_question, name='generate_similar_question'),
+    path('WritingPractice/', views.WritingPractice, name='WritingPractice'),
+    
 ] 
 
 # Allow serving files in development
