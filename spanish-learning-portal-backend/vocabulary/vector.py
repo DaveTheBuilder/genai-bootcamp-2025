@@ -4,6 +4,9 @@ import json
 import os
 import boto3
 from typing import Dict, List, Optional
+import logging
+
+logger = logging.getLogger(__name__)
 
 class BedrockEmbeddingFunction(embedding_functions.EmbeddingFunction):
     def __init__(self, model_id="amazon.titan-embed-text-v1"):
@@ -13,23 +16,31 @@ class BedrockEmbeddingFunction(embedding_functions.EmbeddingFunction):
 
     def __call__(self, texts: List[str]) -> List[List[float]]:
         """Generate embeddings for a list of texts using Bedrock"""
-        embeddings = []
-        for text in texts:
-            try:
-                response = self.bedrock_client.invoke_model(
-                    modelId=self.model_id,
-                    body=json.dumps({
-                        "inputText": text
-                    })
-                )
-                response_body = json.loads(response['body'].read())
-                embedding = response_body['embedding']
-                embeddings.append(embedding)
-            except Exception as e:
-                print(f"Error generating embedding: {str(e)}")
-                # Return a zero vector as fallback
-                embeddings.append([0.0] * 1536)  # Titan model uses 1536 dimensions
-        return embeddings
+        try:
+            logger.info(f"Generating embeddings for {len(texts)} texts")
+            embeddings = []
+            
+            # Process texts one at a time to avoid memory issues
+            for text in texts:
+                try:
+                    body = json.dumps({"inputText": text})
+                    response = self.bedrock_client.invoke_model(
+                        modelId=self.model_id,
+                        body=body
+                    )
+                    response_body = json.loads(response.get('body').read())
+                    embedding = response_body.get('embedding')
+                    embeddings.append(embedding)
+                    logger.info("Successfully generated embedding")
+                except Exception as e:
+                    logger.error(f"Failed to generate embedding: {str(e)}")
+                    embeddings.append([0.0] * 1536)  # Titan model uses 1536 dimensions
+            
+            return embeddings
+            
+        except Exception as e:
+            logger.error(f"Failed to generate embeddings: {str(e)}")
+            raise Exception(f"Failed to generate embeddings: {str(e)}")
 
 class QuestionVectorStore:
     def __init__(self, persist_directory: str = "backend/data/vectorstore"):

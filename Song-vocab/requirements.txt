@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+ollama
+duckduckgo-search
+instructor==0.4.5
+python-dotenv
+beautifulsoup4==4.12.3
+google-search-results
+pydantic==2.6.1

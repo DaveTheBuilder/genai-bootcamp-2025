@@ -7,3 +7,5 @@ sqlparse==0.4.4
 boto3
 python-dotenv==1.0.1
 chromadb
+youtube-transcript-api==0.6.3
+faiss-cpu==1.7.4

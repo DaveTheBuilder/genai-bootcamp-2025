@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: llava-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: llava-service
+  template:
+    metadata:
+      labels:
+        app: llava-service
+    spec:
+      containers:
+        - name: llava-service
+          image: lvm-llava:latest
+          env:
+            - name: LVM_PORT
+              value: "9399"
+            - name: LLAVA_PORT
+              value: "11500"
+            - name: LVM_ENDPOINT
+              value: "http://$(MINIKUBE_IP):11500"
+            - name: MINIKUBE_IP
+              valueFrom:
+                configMapKeyRef:
+                  name: minikube-ip
+                  key: MINIKUBE_IP

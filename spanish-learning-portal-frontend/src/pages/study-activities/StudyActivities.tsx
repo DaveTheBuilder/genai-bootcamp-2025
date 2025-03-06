@@ -38,6 +38,12 @@ const activities = [
     icon: "src/icons/conversation.svg",
     to: "/study-activities/writing-practice",
   },
+  {
+    title: "Video Transcriber",
+    description: "Learn from Spanish YouTube videos with searchable transcripts",
+    icon: "src/icons/video.svg",
+    to: "/study-activities/transcriber",
+  },
 
 ];
 

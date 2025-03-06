@@ -1,7 +1,8 @@
-
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { PracticeSelector } from "@/components/PracticeSelector";
 import { QuestionDisplay } from "@/components/QuestionDisplay";
+import { Button } from "@/components/ui/button";
+import { Volume2 } from "lucide-react";
 import { Question, Feedback, PracticeType, TopicType, LevelType } from "@/types/practice";
 import { useToast } from "@/hooks/use-toast";
 
@@ -49,16 +50,8 @@ const Index = () => {
   const [debugMode, setDebugMode] = useState<boolean>(false);
   const [debugData, setDebugData] = useState<string>("");
 
-/*   const handleGenerateQuestion = () => {
-    const question = mockGenerateQuestion(practiceType, topic);
-    setCurrentQuestion(question);
-    setSelectedAnswer(undefined);
-    setFeedback(undefined);
-    toast({
-      title: "New Question Generated",
-      description: "¡Buena suerte con tu práctica!",
-    });
-  }; */
+  const [isPlaying, setIsPlaying] = useState<boolean>(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const API_URL = "http://localhost:8000/api"
   const handleGenerateQuestion = async () => {
@@ -79,7 +72,6 @@ const Index = () => {
       toast({ title: "Error", description: "Failed to generate question.", variant: "destructive" });
     }
   };
-
 
   const handleNextQuestion = async () => {
     // Call the generate_similar_question function
@@ -102,9 +94,114 @@ const Index = () => {
         console.error("Error fetching similar question:", error);
         toast({ title: "Error", description: "Failed to generate a similar question.", variant: "destructive" });
     }
-};
+  };
 
+  const splitConversation = (conversation: string) => {
+    const lines = conversation.split('\n');
+    const parts = {
+      personA: [] as string[],
+      personB: [] as string[]
+    };
+    
+    lines.forEach(line => {
+      const trimmedLine = line.trim();
+      if (trimmedLine.startsWith('Person A:')) {
+        parts.personA.push(trimmedLine.substring('Person A:'.length).trim());
+      } else if (trimmedLine.startsWith('Person B:')) {
+        parts.personB.push(trimmedLine.substring('Person B:'.length).trim());
+      }
+    });
+    
+    console.log('Split conversation parts:', parts);
+    return parts;
+  };
 
+  const playAudio = async () => {
+    if (!currentQuestion?.Conversation || !audioRef.current) {
+      console.log('Missing conversation or audio ref:', { 
+        hasConversation: !!currentQuestion?.Conversation,
+        hasAudioRef: !!audioRef.current 
+      });
+      return;
+    }
+    
+    try {
+      setIsPlaying(true);
+      console.log('Original conversation:', currentQuestion.Conversation);
+      const parts = splitConversation(currentQuestion.Conversation);
+
+      // Helper function to add delay between lines
+      const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+      
+      // Interleave the conversation lines
+      const maxLines = Math.max(parts.personA.length, parts.personB.length);
+      for (let i = 0; i < maxLines; i++) {
+        // Play person A's line if available
+        if (parts.personA[i]) {
+          console.log('Playing Person A line:', parts.personA[i]);
+          const responseA = await fetch(`${API_URL}/synthesize-speech/`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text: parts.personA[i], voice: 'Lucia' })
+          });
+
+          if (!responseA.ok) {
+            console.error('Response not OK:', await responseA.text());
+            throw new Error('Failed to synthesize speech for person A');
+          }
+          
+          const audioBlobA = await responseA.blob();
+          const audioUrlA = URL.createObjectURL(audioBlobA);
+          audioRef.current.src = audioUrlA;
+          await audioRef.current.play();
+          await new Promise(resolve => audioRef.current!.onended = resolve);
+          URL.revokeObjectURL(audioUrlA);
+          await delay(800); // Slightly longer pause after first speaker
+        }
+
+        // Play person B's line if available
+        if (parts.personB[i]) {
+          console.log('Playing Person B line:', parts.personB[i]);
+          const responseB = await fetch(`${API_URL}/synthesize-speech/`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text: parts.personB[i], voice: 'Enrique' })
+          });
+
+          if (!responseB.ok) {
+            console.error('Response not OK:', await responseB.text());
+            throw new Error('Failed to synthesize speech for person B');
+          }
+          
+          const audioBlobB = await responseB.blob();
+          const audioUrlB = URL.createObjectURL(audioBlobB);
+          audioRef.current.src = audioUrlB;
+          await audioRef.current.play();
+          await new Promise(resolve => audioRef.current!.onended = resolve);
+          URL.revokeObjectURL(audioUrlB);
+          await delay(800); // Slightly longer pause between exchanges
+        }
+      }
+    } catch (error) {
+      console.error('Error playing audio:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to play audio.',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsPlaying(false);
+    }
+  };
+
+  // Clean up audio URL when component unmounts or question changes
+  useEffect(() => {
+    return () => {
+      if (audioRef.current?.src) {
+        URL.revokeObjectURL(audioRef.current.src);
+      }
+    };
+  }, [currentQuestion]);
 
   const handleSubmitAnswer = () => {
     if (!currentQuestion || selectedAnswer === undefined) return;
@@ -146,14 +243,41 @@ const Index = () => {
 
           <div className="space-y-6">
             {currentQuestion ? (
-              <QuestionDisplay
-                question={currentQuestion}
-                feedback={feedback}
-                selectedAnswer={selectedAnswer}
-                onAnswerSelect={setSelectedAnswer}
-                onSubmit={handleSubmitAnswer}
-                onNextQuestion={handleNextQuestion}
-              />
+              <>
+                <QuestionDisplay
+                  question={currentQuestion}
+                  feedback={feedback}
+                  selectedAnswer={selectedAnswer}
+                  onAnswerSelect={setSelectedAnswer}
+                  onSubmit={handleSubmitAnswer}
+                  onNextQuestion={handleNextQuestion}
+                />
+                {currentQuestion.Conversation && (
+                  <div className="mt-4 flex items-center gap-2">
+                    <Button
+                      onClick={playAudio}
+                      disabled={isPlaying}
+                      variant="outline"
+                      className="flex items-center gap-2"
+                    >
+                      <Volume2 className="w-4 h-4" />
+                      {isPlaying ? "Playing..." : "Play Conversation"}
+                    </Button>
+                    <audio 
+                      ref={audioRef} 
+                      onEnded={() => setIsPlaying(false)}
+                      onError={() => {
+                        setIsPlaying(false);
+                        toast({
+                          title: "Error",
+                          description: "Failed to play audio.",
+                          variant: "destructive",
+                        });
+                      }}
+                    />
+                  </div>
+                )}
+              </>
             ) : (
               <div className="h-full flex items-center justify-center p-12 bg-white rounded-lg border border-jlpt shadow-sm animate-fadeIn">
                 <p className="text-lg text-gray-500">Click 'Generate New Question' to start practicing!</p>

@@ -2,7 +2,7 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.db.models import Count
-from .models import Word, Group, Session, StudyActivity
+from .models import Word, Group, Session, StudyActivity, GeneratedQuestion
 from .serializers import (
     WordSerializer, GroupSerializer, SessionSerializer,
     StudyActivitySerializer, DashboardLastStudySessionSerializer,
@@ -155,36 +155,57 @@ from django.http import FileResponse
 from io import BytesIO
 
 @api_view(['POST'])
-@permission_classes([AllowAny])  # 👈 Allow unauthenticated access
-
+@permission_classes([AllowAny])  # 
 def synthesize_speech(request):
     text = request.data.get('text')
+    voice = request.data.get('voice', 'Lucia')  # Default to Lucia if no voice specified
+    
+    # Map frontend voice requests to available AWS Polly voices
+    voice_mapping = {
+        'Lucia': 'Lucia',  # Female Spanish neural voice
+        'Enrique': 'Enrique'  # Male Spanish standard voice
+    }
+    
+    # Use mapped voice or fallback to Lucia
+    polly_voice = voice_mapping.get(voice, 'Lucia')
+    
+    # Set engine based on voice (Lucia uses neural, Enrique uses standard)
+    engine = 'neural' if polly_voice == 'Lucia' else 'standard'
+    
+    print(f"Synthesizing speech - Text: {text}, Voice: {polly_voice}, Engine: {engine}")
+    
     if not text:
+        print("Error: Text is required")
         return Response({"error": "Text is required"}, status=400)
 
     try:
         polly = boto3.client('polly', region_name="eu-west-1")
+        print(f"Making Polly request with voice {polly_voice} and engine {engine}")
         response = polly.synthesize_speech(
             Text=text,
             OutputFormat='mp3',
-            VoiceId='Lucia',
-            Engine='neural',
+            VoiceId=polly_voice,
+            Engine=engine,
             LanguageCode='es-ES'
         )
+        print("Polly request successful")
 
         audio_stream = response.get("AudioStream")
         if not audio_stream:
+            print("Error: No audio stream in response")
             return Response({"error": "Failed to synthesize speech"}, status=500)
 
         # Read binary MP3 data into memory
         audio_bytes = BytesIO(audio_stream.read())
+        print("Audio stream processed successfully")
 
         # Return as a proper file response
         return FileResponse(audio_bytes, content_type="audio/mpeg")
 
     except Exception as e:
         import traceback
-        print("Error in synthesize_speech:", traceback.format_exc())  # Log error details
+        print("Error in synthesize_speech:")
+        print(traceback.format_exc())
         return Response({"error": str(e)}, status=500)
 
 
@@ -257,3 +278,38 @@ def WritingPractice(request):
         return JsonResponse(similar_question)
     else:
         return JsonResponse({"error": "Failed to generate similar question"}, status=450)
+
+from .youtube_service import YouTubeService
+
+# Initialize YouTube service
+youtube_service = YouTubeService()
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def process_youtube_video(request):
+    """Process a YouTube video and store its transcript in vector store."""
+    try:
+        video_url = request.data.get('video_url')
+        if not video_url:
+            return Response({"error": "video_url is required"}, status=400)
+
+        youtube_service.process_video(video_url)
+        return Response({"message": "Video processed successfully"})
+    except Exception as e:
+        return Response({"error": str(e)}, status=501)
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def search_similar_content(request):
+    """Search for similar content based on a query."""
+    try:
+        query = request.data.get('query')
+        k = request.data.get('k', 5)
+        
+        if not query:
+            return Response({"error": "query is required"}, status=400)
+
+        results = youtube_service.search_similar_content(query, k=k)
+        return Response({"results": results})
+    except Exception as e:
+        return Response({"error": str(e)}, status=500)
