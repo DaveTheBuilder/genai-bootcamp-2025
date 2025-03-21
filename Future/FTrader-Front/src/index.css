@@ -1,0 +1,220 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --neumorph-bg: 220 25% 95%;
+    --neumorph-shadow-from: 220 25% 91%;
+    --neumorph-shadow-to: 220 25% 99%;
+    
+    --background: 220 25% 95%;
+    --foreground: 222 47% 11%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+
+    --primary: 210 80% 50%;
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 222 47% 11%;
+
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 47%;
+
+    --accent: 210 40% 96%;
+    --accent-foreground: 222 47% 11%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 222 84% 5%;
+
+    --radius: 1rem;
+
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5% 26%;
+    --sidebar-primary: 240 6% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 5% 96%;
+    --sidebar-accent-foreground: 240 6% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217 91% 60%;
+
+    --success: 142 76% 36%;
+    --success-foreground: 210 40% 98%;
+
+    --warning: 38 92% 50%;
+    --warning-foreground: 210 40% 98%;
+
+    --danger: 0 84% 60%;
+    --danger-foreground: 210 40% 98%;
+
+    --profit: 142 76% 36%;
+    --profit-foreground: 142 76% 36%;
+
+    --loss: 0 84% 60%;
+    --loss-foreground: 0 84% 60%;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Inter', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-muted-foreground/20 rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-muted-foreground/30;
+  }
+}
+
+@layer components {
+  /* Neumorphism components */
+  .neumorph-container {
+    @apply rounded-2xl overflow-hidden transition-all duration-300;
+    background: hsl(var(--neumorph-bg));
+    box-shadow: 
+      8px 8px 16px hsl(var(--neumorph-shadow-from)),
+      -8px -8px 16px hsl(var(--neumorph-shadow-to));
+  }
+  
+  .neumorph-card {
+    @apply p-5 rounded-2xl transition-all duration-300;
+    background: hsl(var(--neumorph-bg));
+    box-shadow: 
+      5px 5px 10px hsl(var(--neumorph-shadow-from)),
+      -5px -5px 10px hsl(var(--neumorph-shadow-to));
+  }
+  
+  .neumorph-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 
+      8px 8px 16px hsl(var(--neumorph-shadow-from)),
+      -8px -8px 16px hsl(var(--neumorph-shadow-to));
+  }
+
+  .neumorph-header {
+    @apply flex items-center justify-between p-4 border-b border-border/30;
+  }
+
+  .neumorph-link {
+    @apply text-sm font-medium text-primary hover:text-primary/80 transition-colors duration-200 flex items-center gap-1;
+  }
+  
+  .neumorph-table {
+    @apply w-full text-sm;
+  }
+  
+  .neumorph-table th {
+    @apply text-xs uppercase tracking-wider font-semibold text-muted-foreground py-3 px-4 text-left;
+  }
+  
+  .neumorph-table td {
+    @apply py-3 px-4 border-t border-border/30;
+  }
+  
+  .neumorph-table tbody tr {
+    @apply transition-colors duration-200;
+  }
+  
+  .neumorph-table tbody tr:hover {
+    @apply bg-white/20;
+  }
+  
+  .neumorph-badge {
+    @apply inline-flex items-center justify-center px-2.5 py-0.5 text-xs font-medium rounded-full;
+  }
+  
+  .neumorph-badge-buy {
+    background: hsl(142 76% 97%);
+    color: hsl(var(--profit));
+    box-shadow: inset 1px 1px 2px hsl(var(--neumorph-shadow-from)), 
+                inset -1px -1px 2px hsl(var(--neumorph-shadow-to));
+  }
+  
+  .neumorph-badge-sell {
+    background: hsl(0 84% 97%);
+    color: hsl(var(--loss));
+    box-shadow: inset 1px 1px 2px hsl(var(--neumorph-shadow-from)), 
+                inset -1px -1px 2px hsl(var(--neumorph-shadow-to));
+  }
+  
+  /* Loading Spinner with neumorphic style */
+  .neumorph-spinner {
+    @apply h-12 w-12 rounded-full relative;
+    border: 4px solid transparent;
+    border-top-color: hsl(var(--primary));
+    animation: spin 1s linear infinite;
+    box-shadow: 
+      5px 5px 10px hsl(var(--neumorph-shadow-from)),
+      -5px -5px 10px hsl(var(--neumorph-shadow-to));
+  }
+}
+
+.animate-stagger-1 {
+  animation-delay: 0.1s;
+}
+
+.animate-stagger-2 {
+  animation-delay: 0.2s;
+}
+
+.animate-stagger-3 {
+  animation-delay: 0.3s;
+}
+
+.animate-stagger-4 {
+  animation-delay: 0.4s;
+}
+
+/* Animations */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Profit/Loss Colors */
+.text-profit {
+  @apply text-success;
+}
+
+.text-loss {
+  @apply text-danger;
+}
+
+/* Standard animations preserved */
+.animate-fade-in {
+  animation: fade-in 0.5s ease-out forwards;
+}
+
+@keyframes fade-in {
+  0% { opacity: 0; transform: translateY(10px); }
+  100% { opacity: 1; transform: translateY(0); }
+}

@@ -1,0 +1,209 @@
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: ftrader-backend-db-1
+    hostname: db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    env_file:
+      - ./.env
+    environment:
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_DB=${DB_NAME}
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME} || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      ftrader_network:
+        aliases:
+          - db
+    restart: always
+    command: postgres -c max_connections=200 -c shared_buffers=256MB -c effective_cache_size=768MB
+
+  rabbitmq:
+    image: rabbitmq:3.12-management
+    container_name: rabbitmq
+    hostname: rabbitmq
+    ports:
+      - "5672:5672"  # AMQP protocol
+      - "15672:15672"  # Management UI
+    environment:
+      - RABBITMQ_DEFAULT_USER=admin
+      - RABBITMQ_DEFAULT_PASS=admin123
+      - RABBITMQ_NODENAME=rabbit@rabbitmq
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      ftrader_network:
+        aliases:
+          - rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_port_connectivity"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: always
+    depends_on:
+      - db
+      - redis
+      - influxdb
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      ftrader_network:
+        aliases:
+          - redis
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - ./:/app
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./.env
+    depends_on:
+      db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      - DATABASE=postgres
+      - DB_HOST=db
+      - REDIS_HOST=redis
+      - RABBITMQ_HOST=rabbitmq
+    networks:
+      ftrader_network:
+        aliases:
+          - web
+    healthcheck:
+      test: ["CMD", "python", "manage.py", "check"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  celery:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: celery -A ftrader worker -l info
+    volumes:
+      - ./:/app
+    env_file:
+      - ./.env
+    networks:
+      ftrader_network:
+        aliases:
+          - celery
+    depends_on:
+      - web
+      - rabbitmq
+    environment:
+      - DATABASE=postgres
+      - DB_HOST=db
+      - REDIS_HOST=redis
+      - RABBITMQ_HOST=rabbitmq
+
+  celery-beat:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: celery -A ftrader beat -l info
+    volumes:
+      - ./:/app
+    env_file:
+      - ./.env
+    networks:
+      ftrader_network:
+        aliases:
+          - celery-beat
+    depends_on:
+      - web
+      - rabbitmq
+    environment:
+      - DATABASE=postgres
+      - DB_HOST=db
+      - REDIS_HOST=redis
+      - RABBITMQ_HOST=rabbitmq
+
+  daphne:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: daphne -b 0.0.0.0 -p 8001 ftrader.asgi:application
+    volumes:
+      - ./:/app
+    ports:
+      - "8001:8001"
+    env_file:
+      - ./.env
+    depends_on:
+      - web
+      - redis
+    environment:
+      - DATABASE=postgres
+      - DB_HOST=db
+      - REDIS_HOST=redis
+      - RABBITMQ_HOST=rabbitmq
+    networks:
+      ftrader_network:
+        aliases:
+          - daphne
+    healthcheck:
+      test: ["CMD", "daphne", "-v", "2", "ftrader.asgi:application"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  influxdb:
+    image: influxdb:2.7
+    container_name: influxdb
+    ports:
+      - "8086:8086"
+      - "8083:8083"  # Chronograf UI
+      - "9999:9999"  # InfluxDB API
+    volumes:
+      - influxdb_data:/var/lib/influxdb2
+    env_file:
+      - ./.env
+    environment:
+      - DOCKER_INFLUXDB_INIT_MODE=${INFLUXDB_INIT_MODE}
+      - DOCKER_INFLUXDB_INIT_USERNAME=${INFLUXDB_INIT_USERNAME}
+      - DOCKER_INFLUXDB_INIT_PASSWORD=${INFLUXDB_INIT_PASSWORD}
+      - DOCKER_INFLUXDB_INIT_ORG=${INFLUXDB_INIT_ORG}
+      - DOCKER_INFLUXDB_INIT_BUCKET=${INFLUXDB_INIT_BUCKET}
+      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=${INFLUXDB_INIT_ADMIN_TOKEN}
+    networks:
+      ftrader_network:
+
+volumes:
+  postgres_data:
+  rabbitmq_data:
+  redis_data:
+  influxdb_data:
+
+networks:
+  ftrader_network:
+    name: ftrader_network
+    driver: bridge

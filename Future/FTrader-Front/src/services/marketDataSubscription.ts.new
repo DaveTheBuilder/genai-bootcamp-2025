@@ -1,0 +1,206 @@
+import { Subscription, LightstreamerClient } from 'lightstreamer-client-web';
+import { MarketUpdate, MarketUpdateCallback } from './igStreamingTypes';
+import { generateMockMarketUpdate } from './igStreamingMocks';
+import { MARKET_FIELDS } from './igStreamingFields';
+
+export class MarketDataSubscription {
+  private subscriptions: Map<string, Subscription> = new Map();
+  private callbacks: Map<string, MarketUpdateCallback[]> = new Map();
+  private mockIntervals: Map<string, NodeJS.Timeout> = new Map();
+
+  subscribe(epic: string, callback: MarketUpdateCallback, client: LightstreamerClient | null): void {
+    try {
+      if (!client) {
+        console.warn(`No client available for ${epic}, using mock data`);
+        const interval = setInterval(() => callback(generateMockMarketUpdate(epic)), 1000);
+        this.mockIntervals.set(epic, interval);
+        return;
+      }
+
+      if (!this.callbacks.has(epic)) {
+        this.callbacks.set(epic, []);
+      }
+      this.callbacks.get(epic)?.push(callback);
+
+      if (!this.subscriptions.has(epic)) {
+        // Format the subscription item based on the type of data
+        let itemName = epic;
+        
+        // Check if this is an index subscription (starts with IX.)
+        if (epic.startsWith('IX.')) {
+          // For indices, use the format CHART:IX.D.SPTRD.DAILY.IP
+          itemName = `CHART:${epic}`;
+        } else if (epic.includes('.')) {
+          // For regular markets, use the L1 prefix
+          itemName = `L1:${epic}`;
+        }
+        
+        console.log(`Creating subscription with item name: ${itemName}`);
+        
+        const subscription = new Subscription(
+          'MERGE',  // Use MERGE mode for market data
+          itemName, // Use the formatted item name
+          MARKET_FIELDS
+        );
+
+        subscription.setRequestedSnapshot('yes');
+        // Don't set a data adapter - let the server use the default
+
+        subscription.addListener({
+          onSubscription: () => {
+            console.log(`Successfully subscribed to ${epic} with item name ${itemName}`);
+          },
+          onSubscriptionError: (code: number, message: string) => {
+            console.error(`Subscription error for ${epic} with item name ${itemName}: ${code} - ${message}`);
+            
+            // Add fallback for invalid group error (code 21)
+            if (code === 21) {
+              console.warn(`Invalid group error detected for ${epic}, trying alternative format`);
+              
+              // Try an alternative format if the current one failed
+              let alternativeItemName = epic;
+              
+              if (epic.startsWith('IX.')) {
+                // If CHART:IX. format failed, try without the prefix
+                alternativeItemName = epic;
+              } else {
+                // If L1: format failed, try with CHART: prefix
+                alternativeItemName = `CHART:${epic}`;
+              }
+              
+              console.log(`Retrying with alternative item name: ${alternativeItemName}`);
+              
+              const alternativeSubscription = new Subscription(
+                'MERGE',
+                alternativeItemName,
+                MARKET_FIELDS
+              );
+              
+              alternativeSubscription.setRequestedSnapshot('yes');
+              
+              alternativeSubscription.addListener({
+                onSubscription: () => {
+                  console.log(`Successfully subscribed to ${epic} with alternative item name ${alternativeItemName}`);
+                },
+                onSubscriptionError: (altCode: number, altMessage: string) => {
+                  console.error(`Alternative subscription also failed for ${epic}: ${altCode} - ${altMessage}`);
+                  // Fall back to mock data after both attempts fail
+                  const interval = setInterval(() => {
+                    this.callbacks.get(epic)?.forEach(cb => cb(generateMockMarketUpdate(epic)));
+                  }, 1000);
+                  this.mockIntervals.set(epic, interval);
+                },
+                onItemUpdate: (update: any) => this.processUpdate(update, epic)
+              });
+              
+              try {
+                client.subscribe(alternativeSubscription);
+                this.subscriptions.set(epic, alternativeSubscription);
+                return; // Exit early as we're handling this with the alternative subscription
+              } catch (error) {
+                console.error(`Error subscribing with alternative format for ${epic}:`, error);
+              }
+            }
+            
+            // Handle other error codes
+            if (code === 2 || code === 16 || code === 16384 || code === 17 || code === 21) {
+              console.warn(`Data adapter or group error detected (${code} - ${message}), falling back to mock data`);
+              const interval = setInterval(() => {
+                this.callbacks.get(epic)?.forEach(cb => cb(generateMockMarketUpdate(epic)));
+              }, 1000);
+              this.mockIntervals.set(epic, interval);
+            }
+          },
+          onItemUpdate: (update: any) => this.processUpdate(update, epic)
+        });
+
+        try {
+          console.log(`Subscribing to ${itemName} with fields:`, MARKET_FIELDS);
+          client.subscribe(subscription);
+          this.subscriptions.set(epic, subscription);
+        } catch (error) {
+          console.error(`Error subscribing to ${epic} with item name ${itemName}:`, error);
+          const interval = setInterval(() => {
+            this.callbacks.get(epic)?.forEach(cb => cb(generateMockMarketUpdate(epic)));
+          }, 1000);
+          this.mockIntervals.set(epic, interval);
+        }
+      }
+    } catch (error) {
+      console.error(`Unexpected error in subscribe for ${epic}:`, error);
+      const interval = setInterval(() => callback(generateMockMarketUpdate(epic)), 1000);
+      this.mockIntervals.set(epic, interval);
+    }
+  }
+
+  private processUpdate(update: any, epic: string): void {
+    try {
+      const marketUpdate: MarketUpdate = {
+        epic,
+        marketId: update.getValue('MARKET_ID') || epic,
+        bid: parseFloat(update.getValue('BID') || '0'),
+        offer: parseFloat(update.getValue('OFFER') || '0'),
+        high: parseFloat(update.getValue('HIGH') || '0'),
+        low: parseFloat(update.getValue('LOW') || '0'),
+        change: parseFloat(update.getValue('CHANGE') || '0'),
+        changePct: parseFloat(update.getValue('CHANGE_PCT') || '0'),
+        updateTime: update.getValue('UPDATE_TIME') || new Date().toISOString(),
+        marketState: update.getValue('MARKET_STATE') || 'TRADEABLE',
+        marketDelay: parseInt(update.getValue('MARKET_DELAY') || '0'),
+        midOpen: parseFloat(update.getValue('MID_OPEN') || '0'),
+        timestamp: new Date().toISOString()
+      };
+      this.callbacks.get(epic)?.forEach(cb => cb(marketUpdate));
+    } catch (error) {
+      console.error(`Error processing market update for ${epic}:`, error);
+      this.callbacks.get(epic)?.forEach(cb => cb(generateMockMarketUpdate(epic)));
+    }
+  }
+
+  unsubscribe(epic: string, callback: MarketUpdateCallback, client: LightstreamerClient | null): void {
+    try {
+      const callbacks = this.callbacks.get(epic) || [];
+      const index = callbacks.indexOf(callback);
+      if (index > -1) {
+        callbacks.splice(index, 1);
+      }
+
+      if (callbacks.length === 0) {
+        const subscription = this.subscriptions.get(epic);
+        if (subscription && client) {
+          try {
+            client.unsubscribe(subscription);
+          } catch (error) {
+            console.error(`Error unsubscribing from ${epic}:`, error);
+          }
+          this.subscriptions.delete(epic);
+        }
+        this.callbacks.delete(epic);
+
+        const interval = this.mockIntervals.get(epic);
+        if (interval) {
+          clearInterval(interval);
+          this.mockIntervals.delete(epic);
+        }
+      }
+    } catch (error) {
+      console.error(`Error in unsubscribe for ${epic}:`, error);
+      const interval = this.mockIntervals.get(epic);
+      if (interval) {
+        clearInterval(interval);
+        this.mockIntervals.delete(epic);
+      }
+    }
+  }
+
+  cleanup(): void {
+    try {
+      this.mockIntervals.forEach(clearInterval);
+      this.mockIntervals.clear();
+      this.callbacks.clear();
+      this.subscriptions.clear();
+    } catch (error) {
+      console.error('Error in cleanup:', error);
+    }
+  }
+}
