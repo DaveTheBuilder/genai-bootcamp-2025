@@ -1,0 +1,47 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+ENV/
+env/
+node_modules/
+
+# Django
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+media/
+staticfiles/
+
+# Docker
+.dockerignore
+Dockerfile
+docker-compose.yml
+
+# Git
+.git/
+.gitignore
+
+# Editor directories and files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Documentation and markdown files
+*.md
+Adaptive_convo.md
+Business_plan_backend.md
+
+# Media files
+*.mp3
+output.mp3
+
+# Node.js
+node_modules/
+package-lock.json
+package.json

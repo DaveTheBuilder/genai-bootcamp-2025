@@ -3,55 +3,164 @@ import json
 from typing import Dict, List, Optional
 from .vector import QuestionVectorStore
 import uuid  
+import logging
+import traceback
+import os
 
+logger = logging.getLogger(__name__)
 
 class QuestionGenerator:
     def __init__(self):
         """Initialize Bedrock client and vector store"""
-        self.bedrock_client = boto3.client('bedrock-runtime', region_name="us-east-1")
+        self.has_bedrock = False
+        try:
+            # Log AWS credentials availability (without exposing the actual values)
+            aws_key = os.environ.get('AWS_ACCESS_KEY_ID')
+            aws_secret = os.environ.get('AWS_SECRET_ACCESS_KEY')
+            aws_region = os.environ.get('AWS_REGION', 'us-east-1')
+            
+            logger.info(f"AWS credentials check - Key: {'Available' if aws_key else 'Missing'}, "
+                        f"Secret: {'Available' if aws_secret else 'Missing'}, "
+                        f"Region: {aws_region}")
+            
+            # Create the Bedrock client for checking available models
+            self.bedrock_client = boto3.client('bedrock', region_name=aws_region)
+            
+            # Create the Bedrock runtime client for invoking models
+            self.bedrock_runtime = boto3.client('bedrock-runtime', region_name=aws_region)
+            
+            # Test if the client works by listing available models
+            try:
+                # Use a simple API call to test connectivity
+                models = self.bedrock_client.list_foundation_models()
+                available_models = [m['modelId'] for m in models.get('modelSummaries', [])]
+                logger.info(f"Successfully connected to AWS Bedrock. Available models: {len(available_models)}")
+                
+                # Use the specific model that we know works
+                self.model_id = "amazon.nova-lite-v1:0"
+                
+                # Check if our model is available
+                if self.model_id in available_models:
+                    logger.info(f"Using model: {self.model_id}")
+                    self.has_bedrock = True
+                else:
+                    logger.warning(f"Model {self.model_id} is not available. Falling back to mock data.")
+                    self.has_bedrock = False
+                    
+            except Exception as e:
+                logger.error(f"AWS Bedrock connectivity test failed: {str(e)}")
+                logger.error(traceback.format_exc())
+                self.has_bedrock = False
+                
+        except Exception as e:
+            logger.error(f"Failed to initialize Bedrock client: {str(e)}")
+            logger.error(traceback.format_exc())
+            self.has_bedrock = False
+        
         self.vector_store = QuestionVectorStore()
-        self.model_id = "amazon.nova-lite-v1:0"
 
 
     def _invoke_bedrock(self, practice_type: str, topic: str, level: str, prompt: str) -> Optional[dict]:
         """Invoke Bedrock to generate a structured question"""
         try:
+            if not self.has_bedrock:
+                logger.warning("Bedrock client not available, using fallback mock data")
+                return self._generate_mock_question(practice_type, topic, level)
+                
             if not prompt: 
-                prompt = f"Generate a Spanish dialogue question for {practice_type} on the topic {topic} at the level of {level}. Introduction and explanation should be in english. CorrectAnswer should be number 0-3. Return the response in this JSON format:\n" \
-                    "{ 'Introduction': '...', 'Conversation': '...', 'Question': '...', 'Options': ['...', '...', '...', '...'], 'correctAnswer': ..., 'explanation': '...' }"
+                prompt = f"""Generate a Spanish dialogue question for {practice_type} on the topic {topic} at the level of {level}. 
+                Introduction and explanation should be in English. CorrectAnswer should be number 0-3. 
+                Return the response in this JSON format:
+                {{
+                  "Introduction": "...",
+                  "Conversation": "...",
+                  "Question": "...",
+                  "Options": ["...", "...", "...", "..."],
+                  "correctAnswer": 0,
+                  "explanation": "..."
+                }}"""
 
-        
+            logger.info(f"Attempting to invoke Bedrock with model: {self.model_id}")
+            
+            # Create message payload for the nova model
             messages = [{
                 "role": "user",
                 "content": [{"text": prompt}]
             }]
             
-            response = self.bedrock_client.converse(
+            # Invoke the model using the converse method
+            response = self.bedrock_runtime.converse(
                 modelId=self.model_id,
                 messages=messages,
                 inferenceConfig={"temperature": 0.7}
             )
-
-            response_text = response['output']['message']['content'][0]['text']
             
-            # Ensure response is valid JSON
-            question_data = json.loads(response_text)
-            video_id = str(uuid.uuid4())  # Generate a new UUID for each question
-            print(f"Level: {level}")
-            self.vector_store.add_questions(level, [question_data], video_id=video_id)  # Use a proper video ID
-
-
-           # print(f"Prompt: {prompt}")
-           # print(f"Practice Type: {practice_type}")
-           # print(f"Topic: {topic}")
-
-           # print(f"Response: {response_text}")
-            return question_data  # Return structured response
+            # Extract the response text
+            response_text = response['output']['message']['content'][0]['text']
+            logger.info(f"Successfully received response from Bedrock: {response_text[:100]}...")
+            
+            # Parse the JSON response
+            try:
+                # Find JSON content in the response (it might be embedded in other text)
+                start_idx = response_text.find('{')
+                end_idx = response_text.rfind('}') + 1
+                
+                if start_idx >= 0 and end_idx > start_idx:
+                    json_str = response_text[start_idx:end_idx]
+                    question_data = json.loads(json_str)
+                else:
+                    raise ValueError("No JSON content found in response")
+                
+                # Validate the question data
+                required_fields = ["Introduction", "Conversation", "Question", "Options", "correctAnswer"]
+                for field in required_fields:
+                    if field not in question_data:
+                        logger.warning(f"Missing required field in response: {field}")
+                        question_data[field] = "Not provided" if field != "Options" else ["Option 1", "Option 2", "Option 3", "Option 4"]
+                
+                if not isinstance(question_data["Options"], list) or len(question_data["Options"]) != 4:
+                    question_data["Options"] = ["Option 1", "Option 2", "Option 3", "Option 4"]
+                
+                if not isinstance(question_data["correctAnswer"], int) or question_data["correctAnswer"] < 0 or question_data["correctAnswer"] > 3:
+                    question_data["correctAnswer"] = 0
+                
+                # Store the question in the vector store
+                video_id = str(uuid.uuid4())
+                logger.info(f"Storing question for level: {level}")
+                self.vector_store.add_questions(level, [question_data], video_id=video_id)
+                
+                return question_data
+            except Exception as e:
+                logger.error(f"Error parsing JSON from response: {str(e)}")
+                logger.error(f"Response text: {response_text}")
+                return self._generate_mock_question(practice_type, topic, level)
+                
         except Exception as e:
-            print(f"Error invoking Bedrock: {str(e)}")
+            logger.error(f"Error invoking Bedrock: {str(e)}")
+            logger.error(traceback.format_exc())
+            # Fall back to mock data
+            return self._generate_mock_question(practice_type, topic, level)
 
-            return None
-
+    def _generate_mock_question(self, practice_type: str, topic: str, level: str) -> Dict:
+        """Generate a mock question for development/testing"""
+        logger.info(f"Generating mock question for {practice_type} on {topic} at {level} level")
+        
+        # Create a simple mock question based on the inputs
+        mock_question = {
+            "Introduction": f"This is a mock {level} level Spanish conversation about {topic}.",
+            "Conversation": "María: Hola, ¿cómo estás?\nJuan: Estoy bien, gracias. ¿Y tú?\nMaría: Muy bien. ¿Qué hiciste ayer?\nJuan: Fui al cine con mis amigos.",
+            "Question": f"What did Juan do yesterday?",
+            "Options": [
+                "He went to the cinema with friends",
+                "He stayed at home",
+                "He went to work",
+                "He visited his family"
+            ],
+            "correctAnswer": 0,
+            "explanation": "Juan said 'Fui al cine con mis amigos' which means 'I went to the cinema with my friends'."
+        }
+        
+        return mock_question
 
     def generate_similar_question(self, practice_type: str, topic: str, level: str, prompt: str) -> Dict:
         """Generate a new question similar to existing ones on a given topic"""
